@@ -1,15 +1,12 @@
 # AStar_FinalYear_CPP
-<p>Testing 12 12</p>
+<p>This project will Be closely linked to my final year project.</p>
 
-#Week 1
-<p>Get matrix up</p>
+<p>This project aims to mimic a Car Park with different states for different spaces</p>
 
-#Week 2
-<p>Implement the algorithm</p>
+<p>Parking spot available = Goal</p>
+<p>Parking spot unavailable = Obstacle </p>
 
-#Week 3 
-<p>Design it to be a racing car game</p>
+<p>For this project these will be updated manually, but will be transfered to FYP to work with YOLOv8</p>
+<p></p>
 
-#Week 4,5,6
-<p>Report</p>
 
