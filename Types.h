@@ -1,15 +1,11 @@
 #pragma once
 #include <vector>
-#include <cstdint>
 
-enum class CellType : uint8_t { Empty = 0, Obstacle = 1, Goal = 2 };
+struct Position {
+	int row;
+	int col;
 
-struct IVec2 {
-    int x = 0, y = 0;
-    bool operator==(const IVec2& o) const { return x == o.x && y == o.y; }
-};
-
-struct PathResult {
-    bool found = false;
-    std::vector<IVec2> path;
+	bool operator==(const Position& other) const {
+		return row == other.row && col == other.col;
+	}
 };
