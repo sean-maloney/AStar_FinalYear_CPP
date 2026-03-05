@@ -1,5 +1,7 @@
 #include "Grid.h"
 #include <iostream>
+#include <algorithm>
+#include <cctype>
 using namespace std;
 
 Grid::Grid() {
@@ -7,17 +9,101 @@ Grid::Grid() {
 	startPos = { -1, -1 };
 }
 
-// TODO: implement these properly
-void Grid::clearAll() {}
-bool Grid::clearCell(const string& coord) { return false; }
-bool Grid::setStart(const string& coord) { return false; }
-bool Grid::addGoal(const string& coord) { return false; }
-bool Grid::toggleObstacle(const string& coord) { return false; }
-void Grid::clearPath() {}
-void Grid::markPath(const vector<Position>& path) {}
+void Grid::clearAll() {
+	for (int r = 0; r < ROWS; r++)
+		for (int c = 0; c < COLS; c++)
+			cells[r][c] = CellType::Empty;
+	goals.clear();
+	startPos = { -1, -1 };
+}
+
+bool Grid::clearCell(const string& coord) {
+	Position pos;
+	if (!parseCoord(coord, &pos)) return false;
+
+	if (cells[pos.row][pos.col] == CellType::Start)
+		startPos = { -1, -1 };
+
+	// remove from goals list if it was a goal
+	if (cells[pos.row][pos.col] == CellType::Goal) {
+		for (int i = 0; i < (int)goals.size(); i++) {
+			if (goals[i] == pos) {
+				goals.erase(goals.begin() + i);
+				break;
+			}
+		}
+	}
+
+	cells[pos.row][pos.col] = CellType::Empty;
+	return true;
+}
+
+bool Grid::setStart(const string& coord) {
+	Position pos;
+	if (!parseCoord(coord, &pos)) return false;
+	if (!isWalkable(pos.row, pos.col)) return false;
+
+	// clear old start if there was one
+	if (startPos.row != -1)
+		cells[startPos.row][startPos.col] = CellType::Empty;
+
+	startPos = pos;
+	cells[pos.row][pos.col] = CellType::Start;
+	return true;
+}
+
+bool Grid::addGoal(const string& coord) {
+	Position pos;
+	if (!parseCoord(coord, &pos)) return false;
+	if (!isWalkable(pos.row, pos.col)) return false;
+
+	cells[pos.row][pos.col] = CellType::Goal;
+	goals.push_back(pos);
+	return true;
+}
+
+bool Grid::toggleObstacle(const string& coord) {
+	Position pos;
+	if (!parseCoord(coord, &pos)) return false;
+
+	CellType cell = cells[pos.row][pos.col];
+
+	if (cell == CellType::Start) return false;
+
+	if (cell == CellType::Goal) {
+		for (int i = 0; i < (int)goals.size(); i++) {
+			if (goals[i] == pos) {
+				goals.erase(goals.begin() + i);
+				break;
+			}
+		}
+		cells[pos.row][pos.col] = CellType::Obstacle;
+		return true;
+	}
+
+	if (cell == CellType::Obstacle)
+		cells[pos.row][pos.col] = CellType::Empty;
+	else
+		cells[pos.row][pos.col] = CellType::Obstacle;
+
+	return true;
+}
+
+void Grid::clearPath() {
+	for (int r = 0; r < ROWS; r++)
+		for (int c = 0; c < COLS; c++)
+			if (cells[r][c] == CellType::Path)
+				cells[r][c] = CellType::Empty;
+}
+
+void Grid::markPath(const vector<Position>& path) {
+	for (int i = 0; i < (int)path.size(); i++) {
+		if (cells[path[i].row][path[i].col] == CellType::Empty)
+			cells[path[i].row][path[i].col] = CellType::Path;
+	}
+}
 
 void Grid::print(bool useColor) const {
-	// print column headers
 	cout << "   ";
 	for (int c = 0; c < COLS; c++)
 		cout << (char)('A' + c) << " ";
@@ -25,8 +111,17 @@ void Grid::print(bool useColor) const {
 
 	for (int r = 0; r < ROWS; r++) {
 		cout << r << "  ";
-		for (int c = 0; c < COLS; c++)
-			cout << ". ";
+		for (int c = 0; c < COLS; c++) {
+			char sym = '.';
+			switch (cells[r][c]) {
+			case CellType::Obstacle: sym = 'X'; break;
+			case CellType::Start:    sym = 'S'; break;
+			case CellType::Goal:     sym = 'G'; break;
+			case CellType::Path:     sym = '*'; break;
+			default: break;
+			}
+			cout << sym << " ";
+		}
 		cout << endl;
 	}
 }
@@ -36,10 +131,7 @@ bool Grid::isWalkable(int row, int col) const {
 	return cells[row][col] != CellType::Obstacle;
 }
 
-CellType Grid::getCell(int row, int col) const {
-	return cells[row][col];
-}
-
+CellType Grid::getCell(int row, int col) const { return cells[row][col]; }
 Position Grid::getStart() const { return startPos; }
 vector<Position> Grid::getGoals() const { return goals; }
 
