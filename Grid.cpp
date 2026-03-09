@@ -24,7 +24,6 @@ bool Grid::clearCell(const string& coord) {
 	if (cells[pos.row][pos.col] == CellType::Start)
 		startPos = { -1, -1 };
 
-	// remove from goals list if it was a goal
 	if (cells[pos.row][pos.col] == CellType::Goal) {
 		for (int i = 0; i < (int)goals.size(); i++) {
 			if (goals[i] == pos) {
@@ -43,7 +42,17 @@ bool Grid::setStart(const string& coord) {
 	if (!parseCoord(coord, &pos)) return false;
 	if (!isWalkable(pos.row, pos.col)) return false;
 
-	// clear old start if there was one
+	// bugfix: if we're placing start on a goal cell, remove it from goals
+	// otherwise the position stays in the goals list even though its now start
+	if (cells[pos.row][pos.col] == CellType::Goal) {
+		for (int i = 0; i < (int)goals.size(); i++) {
+			if (goals[i] == pos) {
+				goals.erase(goals.begin() + i);
+				break;
+			}
+		}
+	}
+
 	if (startPos.row != -1)
 		cells[startPos.row][startPos.col] = CellType::Empty;
 
