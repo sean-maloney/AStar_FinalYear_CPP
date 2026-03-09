@@ -5,7 +5,6 @@
 #include <stdexcept>
 using namespace std;
 
-// ansi color codes
 #define RED    "\033[31m"
 #define GREEN  "\033[32m"
 #define BLUE   "\033[34m"
@@ -15,6 +14,38 @@ using namespace std;
 Grid::Grid() {
 	cells.resize(ROWS, vector<CellType>(COLS, CellType::Empty));
 	startPos = { -1, -1 };
+}
+
+void Grid::loadDefaultLayout() {
+	// reset everything first
+	for (int r = 0; r < ROWS; r++)
+		for (int c = 0; c < COLS; c++)
+			cells[r][c] = CellType::Empty;
+	goals.clear();
+	startPos = { -1, -1 };
+
+	// helper to fill a rectangle with obstacles
+	auto fillRect = [&](int r0, int c0, int r1, int c1) {
+		for (int r = r0; r <= r1; r++)
+			for (int c = c0; c <= c1; c++)
+				cells[r][c] = CellType::Obstacle;
+		};
+
+	fillRect(1, 1, 1, 9);   // top row of parked cars
+	fillRect(4, 1, 5, 9);   // middle double row
+	fillRect(8, 1, 8, 10);  // bottom row
+
+	// open parking spots
+	Position spots[] = {
+		{1, 3}, {1, 7},
+		{4, 6}, {5, 6},
+		{8, 2}, {8, 9},
+	};
+
+	for (auto& p : spots) {
+		cells[p.row][p.col] = CellType::Goal;
+		goals.push_back(p);
+	}
 }
 
 void Grid::clearAll() {
