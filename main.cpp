@@ -12,12 +12,27 @@ string toUpper(string s) {
 	return s;
 }
 
+void printHelp() {
+	cout << "Commands:\n"
+		<< "  START A2\n"
+		<< "  GOAL H6\n"
+		<< "  OBST C4\n"
+		<< "  CLEAR D2\n"
+		<< "  CLEARALL\n"
+		<< "  RUN\n"
+		<< "  LOAD_DEFAULT\n"
+		<< "  COLOR ON | COLOR OFF\n"
+		<< "  HELP\n"
+		<< "  QUIT\n";
+}
+
 int main() {
 	Grid grid;
 	bool useColor = true;
 
 	grid.loadDefaultLayout();
 	grid.print(useColor);
+	printHelp();
 
 	while (true) {
 		cout << "\nCommand: ";
@@ -31,6 +46,11 @@ int main() {
 
 		if (cmd.empty()) continue;
 		if (cmd == "QUIT") break;
+
+		if (cmd == "HELP") {
+			printHelp();
+			continue;
+		}
 
 		if (cmd == "START") {
 			string coord; iss >> coord;
@@ -87,7 +107,16 @@ int main() {
 			continue;
 		}
 
-		cout << "Unknown command.\n";
+		if (cmd == "COLOR") {
+			string mode; iss >> mode;
+			mode = toUpper(mode);
+			if (mode == "ON")  useColor = true;
+			if (mode == "OFF") useColor = false;
+			grid.print(useColor);
+			continue;
+		}
+
+		cout << "Unknown command. Type HELP.\n";
 	}
 
 	return 0;
