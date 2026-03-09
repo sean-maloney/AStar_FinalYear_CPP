@@ -2,7 +2,15 @@
 #include <iostream>
 #include <algorithm>
 #include <cctype>
+#include <stdexcept>
 using namespace std;
+
+// ansi color codes
+#define RED    "\033[31m"
+#define GREEN  "\033[32m"
+#define BLUE   "\033[34m"
+#define YELLOW "\033[33m"
+#define RESET  "\033[0m"
 
 Grid::Grid() {
 	cells.resize(ROWS, vector<CellType>(COLS, CellType::Empty));
@@ -42,8 +50,6 @@ bool Grid::setStart(const string& coord) {
 	if (!parseCoord(coord, &pos)) return false;
 	if (!isWalkable(pos.row, pos.col)) return false;
 
-	// bugfix: if we're placing start on a goal cell, remove it from goals
-	// otherwise the position stays in the goals list even though its now start
 	if (cells[pos.row][pos.col] == CellType::Goal) {
 		for (int i = 0; i < (int)goals.size(); i++) {
 			if (goals[i] == pos) {
@@ -122,14 +128,20 @@ void Grid::print(bool useColor) const {
 		cout << r << "  ";
 		for (int c = 0; c < COLS; c++) {
 			char sym = '.';
+			const char* col = "";
+
 			switch (cells[r][c]) {
-			case CellType::Obstacle: sym = 'X'; break;
-			case CellType::Start:    sym = 'S'; break;
-			case CellType::Goal:     sym = 'G'; break;
-			case CellType::Path:     sym = '*'; break;
+			case CellType::Obstacle: sym = 'X'; col = RED;    break;
+			case CellType::Start:    sym = 'S'; col = BLUE;   break;
+			case CellType::Goal:     sym = 'G'; col = GREEN;  break;
+			case CellType::Path:     sym = '*'; col = YELLOW; break;
 			default: break;
 			}
-			cout << sym << " ";
+
+			if (useColor && cells[r][c] != CellType::Empty)
+				cout << col << sym << RESET << " ";
+			else
+				cout << sym << " ";
 		}
 		cout << endl;
 	}
@@ -146,8 +158,17 @@ vector<Position> Grid::getGoals() const { return goals; }
 
 bool Grid::parseCoord(const string& coord, Position* pos) const {
 	if (coord.size() < 2) return false;
+	if (!isalpha((unsigned char)coord[0])) return false;
+
 	int col = toupper(coord[0]) - 'A';
-	int row = stoi(coord.substr(1));
+	int row = 0;
+	try {
+		row = stoi(coord.substr(1));
+	}
+	catch (...) {
+		return false;
+	}
+
 	if (!inBounds(row, col)) return false;
 	pos->row = row;
 	pos->col = col;
