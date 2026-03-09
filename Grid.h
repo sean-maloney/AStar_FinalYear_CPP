@@ -18,6 +18,8 @@ public:
 
 	Grid();
 
+	void loadDefaultLayout();
+
 	void clearAll();
 	bool clearCell(const std::string& coord);
 
