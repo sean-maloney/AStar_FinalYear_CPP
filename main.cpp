@@ -8,8 +8,8 @@
 using namespace std;
 
 string toUpper(string s) {
-	for (auto& c : s) c = toupper(c);
-	return s;
+	for (auto& c : s) c = toupper(c); //convert each character to uppercase
+	return s;						  // return updated string
 }
 
 void printHelp() {
@@ -34,80 +34,80 @@ int main() {
 	grid.print(useColor);
 	printHelp();
 
-	while (true) {
+	while (true) {	//keep running until user quits
 		cout << "\nCommand: ";
 		string line;
-		if (!getline(cin, line)) break;
+		if (!getline(cin, line)) break; //stop if input fails
 
-		istringstream iss(line);
+		istringstream iss(line);		//read cinnabd from full input line
 		string cmd;
 		iss >> cmd;
-		cmd = toUpper(cmd);
+		cmd = toUpper(cmd);				//calls make uppercase command
 
-		if (cmd.empty()) continue;
-		if (cmd == "QUIT") break;
+		if (cmd.empty()) continue;		//ignore empty input
+		if (cmd == "QUIT") break;		//exit program
 
 		if (cmd == "HELP") {
-			printHelp();
+			printHelp();				//show list of commands
 			continue;
 		}
 
 		if (cmd == "START") {
-			string coord; iss >> coord;
+			string coord; iss >> coord;			//read coorfinate after START
 			if (!grid.setStart(coord))
 				cout << "START failed (invalid coord or blocked).\n";
-			grid.print(useColor);
+			grid.print(useColor);				//prints updated grid
 			continue;
 		}
 
 		if (cmd == "GOAL") {
-			string coord; iss >> coord;
+			string coord; iss >> coord;			//read coorfinate after GOAL
 			if (!grid.addGoal(coord))
 				cout << "GOAL failed (invalid coord or blocked).\n";
-			grid.print(useColor);
+			grid.print(useColor);				//prints updated grid
 			continue;
 		}
 
 		if (cmd == "OBST") {
-			string coord; iss >> coord;
+			string coord; iss >> coord;			//read coorfinate after OBST
 			if (!grid.toggleObstacle(coord))
 				cout << "OBST failed (invalid coord or cell is START).\n";
-			grid.print(useColor);
+			grid.print(useColor);				//prints updated grid
 			continue;
 		}
 
 		if (cmd == "CLEAR") {
-			string coord; iss >> coord;
+			string coord; iss >> coord;			//read coorfinate after CLEAR
 			if (!grid.clearCell(coord))
 				cout << "CLEAR failed (invalid coord).\n";
-			grid.print(useColor);
+			grid.print(useColor);				//prints updated grid
 			continue;
 		}
 
 		if (cmd == "CLEARALL") {
-			grid.clearAll();
+			grid.clearAll();					//Clears entire grid
 			grid.print(useColor);
 			continue;
 		}
 
 		if (cmd == "RUN") {
-			grid.clearPath();
-			auto path = runAStar(grid);
+			grid.clearPath();					//Remove old path before finding new one
+			auto path = runAStar(grid);			//Runs A* pathfinding
 			if (path.empty())
 				cout << "No path found.\n";
 			else
-				grid.markPath(path);
+				grid.markPath(path);			//draw found path on grid
 			grid.print(useColor);
 			continue;
 		}
 
 		if (cmd == "LOAD_DEFAULT") {
-			grid.loadDefaultLayout();
+			grid.loadDefaultLayout();			//load preset map layout
 			grid.print(useColor);
 			continue;
 		}
 
-		if (cmd == "COLOR") {
+		if (cmd == "COLOR") {					//Toggles color mode on or off
 			string mode; iss >> mode;
 			mode = toUpper(mode);
 			if (mode == "ON")  useColor = true;
@@ -116,7 +116,7 @@ int main() {
 			continue;
 		}
 
-		cout << "Unknown command. Type HELP.\n";
+		cout << "Unknown command. Type HELP.\n";	//message for invalid command
 	}
 
 	return 0;
