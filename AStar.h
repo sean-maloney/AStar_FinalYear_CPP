@@ -1,7 +1,13 @@
 #pragma once
 #include <vector>
+#include <string>
 #include "Grid.h"
 
-// runs astar on the grid and returns the path
-// returns empty vector if no path found
-std::vector<Position> runAStar(const Grid& grid);
+enum class HeuristicType {
+	Manhattan,
+	Euclidean,
+	Chebyshev
+};
+
+std::vector<Position> runAStar(const Grid& grid, HeuristicType heuristicType = HeuristicType::Manhattan);
+std::string heuristicToString(HeuristicType heuristicType);
