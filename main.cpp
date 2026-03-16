@@ -3,6 +3,7 @@
 #include <sstream>
 #include <algorithm>
 #include <cctype>
+#include <iomanip>
 #include "AStar.h"
 #include "Grid.h"
 using namespace std;
@@ -40,10 +41,56 @@ void printHelp() {
 		<< "  CLEARALL\n"
 		<< "  RUN\n"
 		<< "  HEURISTIC MANHATTAN | EUCLIDEAN | CHEBYSHEV\n"
+		<< "  REVIEW\n"
 		<< "  LOAD_DEFAULT\n"
 		<< "  COLOR ON | COLOR OFF\n"
 		<< "  HELP\n"
 		<< "  QUIT\n";
+}
+
+void printRunSummary(const SearchResult& result, HeuristicType heuristicType) {
+	cout << "Heuristic used: " << heuristicToString(heuristicType) << "\n";
+	cout << "Nodes expanded: " << result.stats.nodesExpanded << "\n";
+	cout << "Nodes generated: " << result.stats.nodesGenerated << "\n";
+	cout << "Execution time: " << result.stats.executionMicros << " microseconds\n";
+
+	if (result.foundPath) {
+		cout << "Chosen goal: " << char('A' + result.chosenGoal.col) << result.chosenGoal.row << "\n";
+		cout << "Path length: " << result.stats.pathLength << "\n";
+		if (result.startWasGoal)
+			cout << "Start position is already on a goal cell.\n";
+	}
+}
+
+void printPerformanceOverview(const vector<PerformanceRow>& rows) {
+	cout << "\nPerformance overview\n";
+	cout << left
+		<< setw(12) << "Heuristic"
+		<< setw(8) << "Found"
+		<< setw(12) << "Goal"
+		<< setw(12) << "PathLen"
+		<< setw(12) << "Expanded"
+		<< setw(12) << "Generated"
+		<< setw(14) << "Time(us)"
+		<< "\n";
+
+	cout << string(82, '-') << "\n";
+
+	for (const auto& row : rows) {
+		string goalText = "-";
+		if (row.chosenGoal.row != -1)
+			goalText = string(1, char('A' + row.chosenGoal.col)) + to_string(row.chosenGoal.row);
+
+		cout << left
+			<< setw(12) << row.heuristicName
+			<< setw(8) << (row.foundPath ? "Yes" : "No")
+			<< setw(12) << goalText
+			<< setw(12) << row.pathLength
+			<< setw(12) << row.nodesExpanded
+			<< setw(12) << row.nodesGenerated
+			<< setw(14) << row.executionMicros
+			<< "\n";
+	}
 }
 
 int main() {
@@ -114,12 +161,13 @@ int main() {
 
 		if (cmd == "RUN") {
 			grid.clearPath();
-			auto path = runAStar(grid, currentHeuristic);
-			if (path.empty())
+			SearchResult result = runAStar(grid, currentHeuristic);
+			if (!result.foundPath)
 				cout << "No path found.\n";
 			else
-				grid.markPath(path);
+				grid.markPath(result.path);
 			grid.print(useColor);
+			printRunSummary(result, currentHeuristic);
 			continue;
 		}
 
@@ -135,6 +183,12 @@ int main() {
 			continue;
 		}
 
+		if (cmd == "REVIEW") {
+			vector<PerformanceRow> rows = runPerformanceOverview(grid);
+			printPerformanceOverview(rows);
+			continue;
+		}
+
 		if (cmd == "LOAD_DEFAULT") {
 			grid.loadDefaultLayout();
 			grid.print(useColor);
@@ -144,7 +198,7 @@ int main() {
 		if (cmd == "COLOR") {
 			string mode; iss >> mode;
 			mode = toUpper(mode);
-			if (mode == "ON") useColor = true;
+			if (mode == "ON")  useColor = true;
 			if (mode == "OFF") useColor = false;
 			grid.print(useColor);
 			continue;
