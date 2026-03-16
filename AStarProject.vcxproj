@@ -134,7 +134,6 @@
     <ClCompile Include="AStar.cpp" />
     <ClCompile Include="Grid.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Types.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
