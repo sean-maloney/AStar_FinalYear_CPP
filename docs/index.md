@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: page
 title: A* Pathfinding Layer for Smart Parking Car Park
 ---
 
