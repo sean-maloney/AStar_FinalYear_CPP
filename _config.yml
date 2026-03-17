@@ -1,9 +1,4 @@
-# Site settings
-title: System-on-Chip Design & Verification
-author:
-  name: Sean Maloney
-  email: g00420811@atu.ie
-description: "A blog."
-
-# Build settings
-remote_theme: jekyll/minima
+title: A* Pathfinding Layer for Smart Parking Car Park
+description: C++ A* pathfinding layer supporting a Smart Parking Car Park system
+theme: minima
+markdown: kramdown
