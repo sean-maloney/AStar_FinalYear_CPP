@@ -51,6 +51,8 @@ The way I see the full pipeline is:
 
 So this project is about creating a useful navigation layer that could sit on top of the smart parking detection system.
 
+<img src="assets/images/car-park-layout.png" alt="Car park layout used as the basis for the pathfinding layer">
+
 ## **How the Program Works**
 
 The program uses a 2D grid made up of cells. Some cells are empty and can be moved through, while others are obstacles and block movement. A start point is placed on the grid, and one or more goals can also be added.
@@ -265,7 +267,7 @@ Understanding this in code was much more useful than only understanding it in th
 
 This screenshot should show the project file structure and the section of `main.cpp` where the command loop is created.
 
-<img src="assets/images/main-setup.png">
+<img src="assets/images/main-setup.png" alt="Main setup showing project structure and command handling">
 
 **Figure 1.** Main setup showing the project structure and command handling.
 
@@ -273,7 +275,8 @@ This screenshot should show the project file structure and the section of `main.
 
 This screenshot should show functions such as `setStart`, `addGoal`, `toggleObstacle`, and `parseCoord`.
 
-<img src="assets/images/grid-logic.png">
+<img src="assets/images/grid-logic1.png" alt="Grid logic screenshot showing start and goal handling">
+<img src="assets/images/grid-logic2.png" alt="Grid logic screenshot showing coordinate parsing and validation">
 
 **Figure 2.** Grid logic used to manage coordinates, obstacles, starts, and goals.
 
@@ -281,7 +284,10 @@ This screenshot should show functions such as `setStart`, `addGoal`, `toggleObst
 
 This screenshot should show the central section of `AStar.cpp`, including node expansion, cost updates, and path reconstruction.
 
-<img src="assets/images/astar-core.png">
+<img src="assets/images/astar-core1.png" alt="A* core logic screenshot showing node structure and scoring">
+<img src="assets/images/astar-core2.png" alt="A* core logic screenshot showing heuristic and setup">
+<img src="assets/images/astar-core3.png" alt="A* core logic screenshot showing main search loop">
+<img src="assets/images/astar-core4.png" alt="A* core logic screenshot showing neighbour expansion and path reconstruction">
 
 **Figure 3.** Core A* implementation showing the search process and final path reconstruction.
 
@@ -289,7 +295,7 @@ This screenshot should show the central section of `AStar.cpp`, including node e
 
 This screenshot should show the later additions for heuristic selection and the performance review feature.
 
-<img src="assets/images/heuristic-review.png">
+<img src="assets/images/heuristic-review.png" alt="Heuristic selection and review feature screenshot">
 
 **Figure 4.** Final extension showing heuristic selection and performance comparison support.
 
@@ -297,7 +303,7 @@ This screenshot should show the later additions for heuristic selection and the 
 
 Below is a screenshot of the console application running successfully.
 
-<img src="assets/images/program-run.png">
+<img src="assets/images/program-run.png" alt="Program output showing pathfinding result">
 
 **Figure 5.** Example program output showing the start node, goals, obstacles, and final route.
 
@@ -366,7 +372,7 @@ I added a performance overview feature that outputs:
 
 This made the project stronger because it allowed me to compare the heuristics in a more structured way and think more seriously about which one best suits the intended application.
 
-<img src="assets/images/performance-review.png">
+<img src="assets/images/performance-review.png" alt="Performance review comparison output">
 
 **Figure 6.** Performance comparison between different heuristics on the same car park layout.
 
