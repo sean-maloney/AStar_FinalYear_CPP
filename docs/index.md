@@ -1,8 +1,6 @@
 ---
 layout: default
 title: A* Pathfinding Layer for Smart Parking Car Park
-tags: c++ astar smart parking pathfinding
-categories: demo
 ---
 
 # **WELCOME TO MY A* PATHFINDING PROJECT**
