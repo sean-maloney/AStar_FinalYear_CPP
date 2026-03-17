@@ -362,7 +362,7 @@ I added a performance overview feature that outputs:
 
 This made the project stronger because it allowed me to compare the heuristics in a more structured way and think more seriously about which one best suits the intended application.
 
-<img src="assets/images/performance-review.png" alt="Performance review comparison output">
+<img src="docs/assets/images/performance-review.png" alt="Performance review comparison output">
 
 **Figure 6.** Performance comparison between different heuristics on the same car park layout.
 
