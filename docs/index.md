@@ -392,7 +392,17 @@ Overall, I believe the project was successful because it not only produced a wor
 
 ## **References**
 
-1. C++ Programming Project Brief  
-2. C++ Standard Library Documentation  
-3. Final Year Project repository and planning notes  
-4. Course material on algorithms and software design
+1. Hart, P. E., Nilsson, N. J. and Raphael, B. (1968) A Formal Basis for the Heuristic Determination of Minimum Cost Paths. IEEE Transactions on Systems Science and Cybernetics, 4(2), pp. 100–107.
+
+2. cppreference.com (2025) std::priority_queue.
+
+3. cppreference.com (2025) std::unordered_map.
+
+4. cppreference.com (2024) std::chrono::high_resolution_clock.
+
+5. cppreference.com (2024) std::chrono::duration_cast.
+
+6. https://claude.ai
+
+7. https://chatgpt.com/
+Atlantic Technological University (2026) C++ Programming Project Brief and Rubric.
