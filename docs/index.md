@@ -261,6 +261,192 @@ Once the algorithm reaches a goal, it reconstructs the final path by following t
 
 Understanding this in code was much more useful than only understanding it in theory. Having to manage the open list, the scores, and the path reconstruction made the logic of the algorithm much clearer to me.
 
+## **Modern C++ Features and Key Code Breakdown**
+
+This section walks through some of the more technically interesting parts of the implementation. These are the lines and patterns I had to think carefully about when writing them, and I want to explain what they are doing and why they are written the way they are.
+
+---
+
+### **The Priority Queue with a Custom Comparator**
+
+```cpp
+auto cmp = [](Node a, Node b) { return a.f() > b.f(); };
+priority_queue<Node, vector<Node>, decltype(cmp)> openList(cmp);
+```
+
+This is one of the most important lines in the whole project and also one of the more C++-specific ones.
+
+A `priority_queue` in C++ is a data structure that always gives you the highest priority element first. By default it is a **max-heap**, meaning the largest value comes out first. But for A*, I need the node with the **lowest** f-cost to come out first, not the highest. So the comparator has to be flipped.
+
+The lambda `[](Node a, Node b) { return a.f() > b.f(); }` is an anonymous comparison function. It says: treat `a` as lower priority than `b` if `a.f()` is greater. This flips the heap into a **min-heap**, so the node with the smallest total cost always rises to the top.
+
+The type signature `priority_queue<Node, vector<Node>, decltype(cmp)>` breaks down as:
+- `Node` — the type of element being stored
+- `vector<Node>` — the underlying container used internally by the priority queue
+- `decltype(cmp)` — the type of the comparator, inferred at compile time using `decltype`
+
+Because lambda types in C++ are unique and unnamed, `decltype(cmp)` is the only way to pass the lambda's type as a template argument. The comparator itself is then passed into the constructor `openList(cmp)` so the queue knows how to order its elements at runtime.
+
+Without this setup, the open list would always pop the worst node first, which would break the algorithm entirely.
+
+---
+
+### **Timing with `chrono::high_resolution_clock`**
+
+```cpp
+auto startTime = chrono::high_resolution_clock::now();
+
+// ... algorithm runs ...
+
+auto endTime = chrono::high_resolution_clock::now();
+result.stats.executionMicros =
+    chrono::duration_cast<chrono::microseconds>(endTime - startTime).count();
+```
+
+This uses the `<chrono>` library from modern C++ to measure exactly how long each search takes.
+
+`chrono::high_resolution_clock::now()` captures the current time as a **time point**. The start is recorded before the algorithm begins, and the end is recorded after it finishes or exits early. Subtracting the two gives a **duration** object representing the elapsed time.
+
+`chrono::duration_cast<chrono::microseconds>` converts that duration into microseconds. The `.count()` call extracts the raw integer value, which gets stored in the result stats.
+
+You'll notice `endTime` is captured at every early-exit point in the function, not just at the end. That's intentional — if the function returns early because no start was set, or because the start is already a goal, the timing still needs to be accurate for that case. Every return path captures its own end time before leaving.
+
+Microseconds was chosen as the unit because A* on a small grid runs very fast. Milliseconds would often just report 0 for short runs, which would make the heuristic performance comparison meaningless.
+
+---
+
+### **The Three Heuristics — Formulas and How They Work**
+
+The heuristic estimates the remaining distance from a given cell to the goal. All three heuristics are scaled by a factor of 10 to match the movement costs used elsewhere (straight moves cost 10, diagonal moves cost 14).
+
+```cpp
+static int heuristic(Position a, Position b, HeuristicType heuristicType) {
+    int rowDiff = abs(a.row - b.row);
+    int colDiff = abs(a.col - b.col);
+
+    switch (heuristicType) {
+    case HeuristicType::Euclidean:
+        return static_cast<int>(round(sqrt(static_cast<double>(rowDiff * rowDiff + colDiff * colDiff)) * 10.0));
+    case HeuristicType::Chebyshev:
+        return max(rowDiff, colDiff) * 10;
+    case HeuristicType::Manhattan:
+    default:
+        return (rowDiff + colDiff) * 10;
+    }
+}
+```
+
+#### Manhattan Distance
+
+```
+h = (|Δrow| + |Δcol|) × 10
+```
+
+Manhattan adds the absolute row difference and the absolute column difference. The name comes from the street grid of Manhattan — you can only travel along axes, never diagonally. This is the right heuristic when movement is locked to **four directions only**. It never overestimates the true cost in that model, which is what makes A* optimal.
+
+**Example:** current = (2, 1), goal = (5, 4)
+```
+rowDiff = 3, colDiff = 3
+h = (3 + 3) × 10 = 60
+```
+
+#### Euclidean Distance
+
+```
+h = √(Δrow² + Δcol²) × 10
+```
+
+Euclidean distance is the straight-line distance between two points. It suits movement models where **diagonal movement is allowed**. The result is multiplied by 10 and rounded to the nearest integer. The `static_cast<double>` is needed because `sqrt` requires a floating-point input, and the final cast back to `int` keeps everything consistent with the rest of the scoring.
+
+**Example:** current = (2, 1), goal = (5, 4)
+```
+rowDiff = 3, colDiff = 3
+h = √(9 + 9) × 10 = √18 × 10 ≈ 42
+```
+
+Because the straight-line distance is always shorter than or equal to Manhattan when diagonals are available, Euclidean gives a tighter and more direct estimate.
+
+#### Chebyshev Distance
+
+```
+h = max(|Δrow|, |Δcol|) × 10
+```
+
+Chebyshev takes the larger of the two axis differences. The logic is: if diagonal moves cost the same as straight moves, you can always cover the smaller axis during your diagonal steps. So the minimum number of moves is just whichever axis is further.
+
+**Example:** current = (2, 1), goal = (5, 4)
+```
+rowDiff = 3, colDiff = 3
+h = max(3, 3) × 10 = 30
+```
+
+In this project, Chebyshev diagonal moves are costed at 10 (same as straight) rather than 14, which reflects the equal-cost assumption in that movement model.
+
+#### Why the Heuristic Alone Doesn't Change the Path Shape
+
+This is something I had to figure out the hard way. The heuristic does not change the route by itself — what changes the route is the **movement model**. The code uses a helper to decide which model applies:
+
+```cpp
+static bool usesDiagonalMovement(HeuristicType heuristicType) {
+    return heuristicType == HeuristicType::Euclidean || heuristicType == HeuristicType::Chebyshev;
+}
+```
+
+Manhattan locks the search to four directions. Euclidean and Chebyshev both unlock eight-direction movement. Switching the heuristic also switches the movement model, which is what actually produces the different looking paths.
+
+---
+
+### **Path Reconstruction — How the Route Is Stored and Retrieved**
+
+Once the algorithm reaches a goal, it traces the route back to the start using the `cameFrom` map.
+
+#### How `cameFrom` Works
+
+```cpp
+unordered_map<int, Position> cameFrom;
+```
+
+Every time a node is reached via a better path, its parent is recorded:
+
+```cpp
+cameFrom[nextKey] = curr.pos;
+```
+
+The key is an integer produced by `positionKey`:
+
+```cpp
+static int positionKey(const Position& pos) {
+    return pos.row * Grid::COLS + pos.col;
+}
+```
+
+This flattens a 2D coordinate into a single unique integer. On a 10-column grid, position (3, 4) becomes `3 × 10 + 4 = 34`. This is a standard technique for using 2D positions as hash map keys without needing a custom hash function.
+
+`unordered_map` is used rather than `map` because it gives O(1) average lookup time instead of O(log n). When the algorithm is doing thousands of lookups during a search, that difference adds up.
+
+#### How the Path Is Reconstructed
+
+```cpp
+static vector<Position> reconstructPath(unordered_map<int, Position>& cameFrom, Position current) {
+    vector<Position> path;
+    int key = positionKey(current);
+
+    while (cameFrom.find(key) != cameFrom.end()) {
+        path.push_back(current);
+        current = cameFrom[key];
+        key = positionKey(current);
+    }
+
+    reverse(path.begin(), path.end());
+    return path;
+}
+```
+
+This starts at the goal and follows parent pointers backwards through the map. Each step adds the current position to the vector and jumps to whoever recorded it as their child. The loop stops when there is no parent entry for the current position — that is the start node, which was never added to `cameFrom`.
+
+The vector ends up in reverse order (goal → start), so `reverse` is called before returning it. The corrected path is then used by the grid to mark and display the final route, and its length is written into the performance stats.
+**
+
 ## **Code Example 1: File Structure and Main Setup**
 
 <img src="assets/images/main-setup.png" alt="Main setup showing project structure and command handling">
@@ -392,17 +578,18 @@ Overall, I believe the project was successful because it not only produced a wor
 
 ## **References**
 
-1. Hart, P. E., Nilsson, N. J. and Raphael, B. (1968) A Formal Basis for the Heuristic Determination of Minimum Cost Paths. IEEE Transactions on Systems Science and Cybernetics, 4(2), pp. 100–107.
+1. cppreference.com (2025) std::priority_queue.
 
-2. cppreference.com (2025) std::priority_queue.
+2. cppreference.com (2025) std::unordered_map.
 
-3. cppreference.com (2025) std::unordered_map.
+3. cppreference.com (2024) std::chrono::high_resolution_clock.
 
-4. cppreference.com (2024) std::chrono::high_resolution_clock.
+4. cppreference.com (2024) std::chrono::duration_cast.
 
-5. cppreference.com (2024) std::chrono::duration_cast.
+5. https://claude.ai
 
-6. https://claude.ai
+6. https://chatgpt.com/
 
-7. https://chatgpt.com/
-Atlantic Technological University (2026) C++ Programming Project Brief and Rubric.
+7. https://www.redblobgames.com/pathfinding/a-star/introduction.html
+
+8. Atlantic Technological University (2026) C++ Programming Project Brief and Rubric.
