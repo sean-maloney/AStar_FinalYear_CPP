@@ -274,11 +274,11 @@ auto cmp = [](Node a, Node b) { return a.f() > b.f(); };
 priority_queue<Node, vector<Node>, decltype(cmp)> openList(cmp);
 ```
 
-This is one of the most important lines in the whole project and also one of the more C++-specific ones.
+This is one of the most important lines in the whole project and also one of the more C++ specific ones.
 
-A `priority_queue` in C++ is a data structure that always gives you the highest priority element first. By default it is a **max-heap**, meaning the largest value comes out first. But for A*, I need the node with the **lowest** f-cost to come out first, not the highest. So the comparator has to be flipped.
+A `priority_queue` in C++ is a data structure that always gives you the highest priority element first. By default it is a **max heap**, meaning the largest value comes out first. But for A*, I need the node with the **lowest** f-cost to come out first, not the highest. So the comparator has to be flipped.
 
-The lambda `[](Node a, Node b) { return a.f() > b.f(); }` is an anonymous comparison function. It says: treat `a` as lower priority than `b` if `a.f()` is greater. This flips the heap into a **min-heap**, so the node with the smallest total cost always rises to the top.
+The lambda `[](Node a, Node b) { return a.f() > b.f(); }` is an anonymous comparison function. It says: treat `a` as lower priority than `b` if `a.f()` is greater. This flips the heap into a **min heap**, so the node with the smallest total cost always rises to the top.
 
 The type signature `priority_queue<Node, vector<Node>, decltype(cmp)>` breaks down as:
 - `Node` — the type of element being stored
@@ -309,13 +309,13 @@ This uses the `<chrono>` library from modern C++ to measure exactly how long eac
 
 `chrono::duration_cast<chrono::microseconds>` converts that duration into microseconds. The `.count()` call extracts the raw integer value, which gets stored in the result stats.
 
-You'll notice `endTime` is captured at every early-exit point in the function, not just at the end. That's intentional — if the function returns early because no start was set, or because the start is already a goal, the timing still needs to be accurate for that case. Every return path captures its own end time before leaving.
+You'll notice `endTime` is captured at every early exit point in the function, not just at the end. That's intentional, if the function returns early because no start was set, or because the start is already a goal, the timing still needs to be accurate for that case. Every return path captures its own end time before leaving.
 
 Microseconds was chosen as the unit because A* on a small grid runs very fast. Milliseconds would often just report 0 for short runs, which would make the heuristic performance comparison meaningless.
 
 ---
 
-### **The Three Heuristics — Formulas and How They Work**
+### **The Three Heuristics Formulas and How They Work**
 
 The heuristic estimates the remaining distance from a given cell to the goal. All three heuristics are scaled by a factor of 10 to match the movement costs used elsewhere (straight moves cost 10, diagonal moves cost 14).
 
@@ -339,21 +339,22 @@ static int heuristic(Position a, Position b, HeuristicType heuristicType) {
 #### Manhattan Distance
 
 ```
-h = (|Δrow| + |Δcol|) × 10
+h = (abs(current.row - goal.row) + abs(current.col - goal.col)) * 10
 ```
 
-Manhattan adds the absolute row difference and the absolute column difference. The name comes from the street grid of Manhattan — you can only travel along axes, never diagonally. This is the right heuristic when movement is locked to **four directions only**. It never overestimates the true cost in that model, which is what makes A* optimal.
+Manhattan adds the absolute row difference and the absolute column difference. The name comes from the street grid of Manhattan, you can only travel along axes, never diagonally. This is the right heuristic when movement is locked to **four directions only**. It never overestimates the true cost in that model, which is what makes A* optimal.
 
 **Example:** current = (2, 1), goal = (5, 4)
 ```
-rowDiff = 3, colDiff = 3
-h = (3 + 3) × 10 = 60
+rowDiff = abs(5 - 2) = 3
+colDiff = abs(4 - 1) = 3
+h = (3 + 3) * 10 = 60
 ```
 
 #### Euclidean Distance
 
 ```
-h = √(Δrow² + Δcol²) × 10
+h = sqrt((current.row - goal.row)^2 + (current.col - goal.col)^2) * 10
 ```
 
 Euclidean distance is the straight-line distance between two points. It suits movement models where **diagonal movement is allowed**. The result is multiplied by 10 and rounded to the nearest integer. The `static_cast<double>` is needed because `sqrt` requires a floating-point input, and the final cast back to `int` keeps everything consistent with the rest of the scoring.
@@ -361,15 +362,17 @@ Euclidean distance is the straight-line distance between two points. It suits mo
 **Example:** current = (2, 1), goal = (5, 4)
 ```
 rowDiff = 3, colDiff = 3
-h = √(9 + 9) × 10 = √18 × 10 ≈ 42
+h = sqrt((3 * 3) + (3 * 3)) * 10
+h = sqrt(18) * 10
+h = 4.24 * 10 = 42 (after rounding)
 ```
 
-Because the straight-line distance is always shorter than or equal to Manhattan when diagonals are available, Euclidean gives a tighter and more direct estimate.
+Because the straight line distance is always shorter than or equal to Manhattan when diagonals are available, Euclidean gives a tighter and more direct estimate.
 
 #### Chebyshev Distance
 
 ```
-h = max(|Δrow|, |Δcol|) × 10
+h = max(abs(current.row - goal.row), abs(current.col - goal.col)) * 10
 ```
 
 Chebyshev takes the larger of the two axis differences. The logic is: if diagonal moves cost the same as straight moves, you can always cover the smaller axis during your diagonal steps. So the minimum number of moves is just whichever axis is further.
@@ -384,7 +387,7 @@ In this project, Chebyshev diagonal moves are costed at 10 (same as straight) ra
 
 #### Why the Heuristic Alone Doesn't Change the Path Shape
 
-This is something I had to figure out the hard way. The heuristic does not change the route by itself — what changes the route is the **movement model**. The code uses a helper to decide which model applies:
+This is something I had to figure out the hard way. The heuristic does not change the route by itself, what changes the route is the **movement model**. The code uses a helper to decide which model applies:
 
 ```cpp
 static bool usesDiagonalMovement(HeuristicType heuristicType) {
@@ -420,7 +423,7 @@ static int positionKey(const Position& pos) {
 }
 ```
 
-This flattens a 2D coordinate into a single unique integer. On a 10-column grid, position (3, 4) becomes `3 × 10 + 4 = 34`. This is a standard technique for using 2D positions as hash map keys without needing a custom hash function.
+This flattens a 2D coordinate into a single unique integer. On a 10-column grid, position (3, 4) becomes `3 x 10 + 4 = 34`. This is a standard technique for using 2D positions as hash map keys without needing a custom hash function.
 
 `unordered_map` is used rather than `map` because it gives O(1) average lookup time instead of O(log n). When the algorithm is doing thousands of lookups during a search, that difference adds up.
 
@@ -444,8 +447,7 @@ static vector<Position> reconstructPath(unordered_map<int, Position>& cameFrom, 
 
 This starts at the goal and follows parent pointers backwards through the map. Each step adds the current position to the vector and jumps to whoever recorded it as their child. The loop stops when there is no parent entry for the current position — that is the start node, which was never added to `cameFrom`.
 
-The vector ends up in reverse order (goal → start), so `reverse` is called before returning it. The corrected path is then used by the grid to mark and display the final route, and its length is written into the performance stats.
-**
+The vector ends up in reverse order (goal -> start), so `reverse` is called before returning it. The corrected path is then used by the grid to mark and display the final route, and its length is written into the performance stats.
 
 ## **Code Example 1: File Structure and Main Setup**
 
